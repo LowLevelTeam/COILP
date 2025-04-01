@@ -5,20 +5,44 @@
 
 ## Overview
 
-COILP is the official processor for COIL (Computer Oriented Intermediate Language), responsible for translating COIL binary format into target-specific output objects. It is the central component of the COIL toolchain that enables cross-architecture portability while maintaining native performance.
+COILP is the processor component of the COIL (Computer Oriented Intermediate Language) Toolchain. It translates COIL binary format into target-specific machine code, allowing programs written in COIL to execute natively on different architectures.
 
-COILP processes COIL's type-determined instructions and variables, mapping them to the most efficient implementation for the target architecture.
+COILP serves as the middle stage of the COIL compilation process, bridging the gap between architecture-independent COIL code and architecture-specific executables.
 
 ## Features
 
-- **Multiple Target Support**: x86-64, ARM64, and more architectures
+- **Multiple Target Support**: x86-64, ARM64, and RISC-V backends
 - **Efficient Register Allocation**: Optimized variable-to-register mapping
-- **Advanced Optimization**: Architecture-specific optimizations
-- **ABI Integration**: Seamless handling of platform calling conventions
-- **Platform-Specific Extensions**: Support for specialized instructions
-- **Complete Variable System**: Automatic variable management
-- **Comprehensive Output Format**: Support for all COILO features
-- **Debugging Support**: Preserves debug information through processing
+- **Advanced Optimization**: Architecture-specific code optimizations
+- **Variable System Implementation**: Complete implementation of COIL's variable model
+- **Debug Information**: Preserves debug information through processing
+- **Platform-Specific Extensions**: Support for specialized hardware features
+
+## COIL Toolchain Integration
+
+COILP is typically the middle stage in the COIL compilation workflow:
+
+```
+Source code (.casm)
+       |
+       v
+  CASM Assembler
+       |
+       v
+ COIL object (.coil)
+       |
+       v
+  COIL Processor (coilp) <-- YOU ARE HERE
+       |
+       v
+COIL output object (.coilo)
+       |
+       v
+OS-specific Linker
+       |
+       v
+  Executable (.exe/.out)
+```
 
 ## Installation
 
@@ -27,35 +51,17 @@ COILP processes COIL's type-determined instructions and variables, mapping them 
 - C++17 compliant compiler
 - CMake 3.15+
 - libcoil-dev 1.0.0+
-- LLVM 13+ (optional, for enhanced optimization)
 
 ### Building from Source
 
 ```bash
-# Clone the repository
 git clone https://github.com/LLT/coilp.git
 cd coilp
-
-# Create build directory
 mkdir build && cd build
-
-# Generate build files
 cmake ..
-
-# Build
 cmake --build .
-
-# Install
 cmake --install .
 ```
-
-### Pre-built Binaries
-
-Pre-built binaries are available for major platforms:
-
-- [Windows x64](https://github.com/LLT/coilp/releases/download/v1.0.0/coilp-1.0.0-win-x64.zip)
-- [macOS x64](https://github.com/LLT/coilp/releases/download/v1.0.0/coilp-1.0.0-macos-x64.tar.gz)
-- [Linux x64](https://github.com/LLT/coilp/releases/download/v1.0.0/coilp-1.0.0-linux-x64.tar.gz)
 
 ## Usage
 
@@ -71,23 +77,21 @@ coilp [options] input.coil -o output.coilo
 |--------|-------------|
 | `-o, --output <file>` | Specify output file |
 | `-O <level>` | Set optimization level (0-3) |
-| `-t <target>` | Target triple (device-arch-mode) |
-| `-f <feature>` | Enable specific feature |
+| `-t <target>` | Target name (x86-64, arm64, riscv) |
+| `-f <feature>` | Enable specific feature (avx, neon, etc.) |
 | `-S` | Output assembly instead of binary |
-| `-j` | Generate JIT-friendly output |
 | `-g` | Preserve debug information |
 | `-v, --verbose` | Enable verbose output |
 | `-h, --help` | Display help message |
-| `--version` | Display version information |
 
 ### Example
 
 ```bash
-# Process with optimization level 2 for x86-64
-coilp -O2 -t cpu-x86-64 program.coil -o program.coilo
+# Process for x86-64 with optimization level 2
+coilp -O2 -t x86-64 program.coil -o program.coilo
 
-# Process with AVX extensions enabled
-coilp -t cpu-x86-64 -f avx,avx2 program.coil -o program.coilo
+# Process for ARM64 with NEON feature enabled
+coilp -t arm64 -f neon program.coil -o program.coilo
 
 # Output assembly instead of binary
 coilp -S program.coil -o program.s
@@ -97,86 +101,68 @@ coilp -S program.coil -o program.s
 
 COILP currently supports the following targets:
 
-| Target | Triple | Description | Status |
-|--------|--------|-------------|--------|
-| x86-64 | cpu-x86-64 | 64-bit x86 architecture | ✅ Full support |
-| ARM64  | cpu-arm-64 | 64-bit ARM architecture | ✅ Full support |
-| RISC-V | cpu-riscv-64 | 64-bit RISC-V architecture | 🚧 In development |
-| WebAssembly | wasm-wasm32 | WebAssembly | 🚧 In development |
-| CUDA   | gpu-cuda-sm75 | NVIDIA CUDA (SM 7.5) | 🚧 In development |
+| Target | Description | Status |
+|--------|-------------|--------|
+| x86-64 | 64-bit x86 architecture | ✅ Full support |
+| ARM64  | 64-bit ARM architecture | ✅ Full support |
+| RISC-V | 64-bit RISC-V architecture | 🚧 In development |
 
-## Architecture
+## Code Examples
 
-COILP uses a modular architecture with the following components:
+Here's how COILP translates COIL code to architecture-specific code:
 
-1. **COIL Parser**: Reads and validates COIL binary format
-2. **Variable Manager**: Allocates variables to registers or memory
-3. **Target Backends**: Architecture-specific code generators
-4. **ABI Manager**: Handles platform-specific calling conventions
-5. **Optimization Pipeline**: Performs target-specific optimizations
-
-## Code Example
-
-Here's how a simple COIL instruction is processed to x86-64:
-
-**COIL Input:**
+**Original COIL:**
 ```
-MOV #1, 42       ; Move immediate 42 to variable #1
-ADD #2, #1, 10   ; Add 10 to #1 and store in #2
+; Basic addition
+VAR #1, TYPE_INT32, 10
+VAR #2, TYPE_INT32, 20
+VAR #3, TYPE_INT32
+ADD #3, #1, #2
 ```
 
 **x86-64 Output:**
 ```asm
-mov eax, 42      ; Variable #1 allocated to EAX
-add ebx, eax, 10 ; Variable #2 allocated to EBX
+; x86-64 output
+movl $10, %eax   ; Variable #1 in EAX
+movl $20, %ebx   ; Variable #2 in EBX
+addl %ebx, %eax  ; Add EBX to EAX
+movl %eax, %ecx  ; Result in ECX (Variable #3)
 ```
 
 **ARM64 Output:**
 ```asm
-mov x0, #42      ; Variable #1 allocated to X0
-add x1, x0, #10  ; Variable #2 allocated to X1
+; ARM64 output
+mov w0, #10      ; Variable #1 in W0
+mov w1, #20      ; Variable #2 in W1
+add w2, w0, w1   ; W2 = W0 + W1 (Variable #3)
 ```
 
 ## Documentation
 
-Comprehensive documentation is available in the `docs/` directory and online at [coil-lang.org/coilp/docs](https://coil-lang.org/coilp/docs):
+Documentation is available in the `docs/` directory:
 
-- [User Guide](https://coil-lang.org/coilp/docs/user-guide.html)
-- [Target Reference](https://coil-lang.org/coilp/docs/targets/)
-- [Optimization Guide](https://coil-lang.org/coilp/docs/optimization.html)
-- [ABI Reference](https://coil-lang.org/coilp/docs/abi/)
-- [Examples](https://coil-lang.org/coilp/docs/examples/)
+- [User Guide](docs/user-guide.md)
+- [Target Reference](docs/targets/)
+- [Optimization Guide](docs/optimization.md)
+- [Feature Reference](docs/features.md)
 
-## Integration with Other Tools
+## Workflow Integration
 
-COILP is designed to work seamlessly with other COIL ecosystem tools:
+COILP works seamlessly with other COIL ecosystem tools:
 
-- `casm`: Generates COIL objects for processing
-- `cbcrun`: Interprets CBC sections in COILO files
-- `ld`/`link.exe`: OS-specific linkers for final executable generation
-
-Typical workflow:
 ```bash
-# Assemble CASM to COIL
+# Assemble with CASM
 casm program.casm -o program.coil
 
-# Process COIL to target-specific code
+# Process with COILP
 coilp program.coil -o program.coilo
 
-# Link with OS-specific linker (Linux example)
+# Link with OS-specific linker
 ld program.coilo -o program
 
 # Run
 ./program
 ```
-
-## Contributing
-
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to COILP.
-
-## Implementation
-
-For details on the implementation approach, architecture, and development plans, see [IMPLEMENTATION.md](IMPLEMENTATION.md).
 
 ## License
 
