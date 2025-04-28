@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-LDFLAGS = /usr/local/lib/libcoil.a /usr/local/lib/libnof.a #-lcoil -lnof
+LDFLAGS = -lcoil -lnof # /usr/local/lib/libcoil.a /usr/local/lib/libnof.a 
 SRC_DIR = src/
 OBJ_DIR = obj
 BIN_DIR = bin

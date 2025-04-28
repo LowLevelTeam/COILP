@@ -71,12 +71,8 @@ int cop_process_file(const char* input_file, const char* output_file, int arch) 
         /* Process the section */
         if (cop_process_section(&coil_obj, &coil_section, nof_ctx, is_code, arch) != 0) {
             fprintf(stderr, "Failed to process section %d\n", i);
-            coil_section_cleanup(&coil_section);
             goto cleanup;
         }
-        
-        /* Clean up the section */
-        coil_section_cleanup(&coil_section);
     }
     
     /* Save the native object file */

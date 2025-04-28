@@ -35,3 +35,5 @@
 build/
 __*
 *.coil
+bin/
+obj/
